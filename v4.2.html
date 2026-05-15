@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Juttu v1.0.3 发版通知 — v4.2 Vega + 弹药库 + Recap 重定向</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="container">
+  <nav class="topnav"><a href="./">← 全部发版</a></nav>
+
+  <header class="hero">
+    <div class="eyebrow">Release Notes · 2026-05-06 (build 3: 2026-05-08)</div>
+    <h1>Juttu v1.0.3 — v4.2「Vega + 弹药库 + Recap 重定向」</h1>
+    <div class="meta">
+      <span><span class="build-chip">build 3</span></span>
+      <span>TestFlight 已上</span>
+      <span>对应 PRD v4.2</span>
+    </div>
+  </header>
+
+  <section class="tldr">
+    <div class="tldr-title">TL;DR · 30 秒读完</div>
+    <p>这版有<strong>三件结构性变化</strong>用户能直接感受到：第三角色换 Vega、新增弹药库、Recap 触发条件改了。</p>
+    <p>TestFlight 内测后追加做了 build 4 admin product-collaboration tooling（Product Decisions tab + Q-X form + System Map dashboard），仅后端 + admin.html, iOS 端版本仍是 build 3。</p>
+    <p>📦 <strong>TestFlight 装 build 3</strong>（含 E-5 弹药库 / Recap 进聊天历史看不到 hotfix）</p>
+  </section>
+
+  <h2>① 第三角色 Sage → Vega</h2>
+  <p>从「对话深度补充型」换成「在地具体型」。Vega 看眼前可触达的本地具体事（本周开的店、本地活动、新产品里的设计取舍、街头物理细节），跟 Nova/Leo 形成<strong>「人际 / 远世界 / 近世界」</strong>三角。</p>
+
+  <table>
+    <thead>
+      <tr><th>维度</th><th>Sage（v4.1）</th><th>Vega（v4.2）</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>角色定位</td><td>隐形深度补充者，不主动出卡</td><td><strong>跟 Nova/Leo 平级</strong>，主动出卡、开口</td></tr>
+      <tr><td>关心什么</td><td>抽象、追问"为什么"</td><td>本周开的店 / 本地活动 / 街边细节 / 新产品设计取舍</td></tr>
+      <tr><td>视觉色</td><td>紫</td><td><strong>蜂蜜琥珀</strong> <code>#C9924A</code></td></tr>
+      <tr><td>三角关系</td><td>人际 / 远世界 / 深度</td><td><strong>人际 / 远世界 / 近世界</strong></td></tr>
+    </tbody>
+  </table>
+
+  <p>线上观测（部署后 48h）：226 张话题卡里 46 张含 Vega 发言（约 20%），客厅闲聊 86 条里 8 条由 Vega 开口（约 9%）。Vega 数量天然比 Nova/Leo 少——本地具体类信号在抓取源（RSS / Reddit / 网络搜索）里本来就比社交、世界新闻少。</p>
+
+  <h2>② 新模块：弹药库</h2>
+  <p>用户自己的收藏空间。<strong>两条存入路径</strong>：</p>
+
+  <div class="feature-list">
+    <div class="feature">
+      <div class="feature-title">🎯 路径 A — 聊前存</div>
+      <div class="feature-body">详情页底部按钮从单个变两个并列——「Continue（黑）」+「存到弹药库（蜂蜜色）」。点存 → 立刻看到 toast「已存入弹药库」（AI 后台慢慢浓缩，用户不用等）。</div>
+    </div>
+    <div class="feature">
+      <div class="feature-title">💬 路径 B — 聊后存</div>
+      <div class="feature-body">聊到 ≥3 轮后点左上 ← ，弹一个对话框：「这次聊得不错。要不要把它浓缩存进弹药库？」选「浓缩存」就把这次聊的内容织进弹药卡。</div>
+    </div>
+  </div>
+
+  <p><strong>进入入口</strong>：navbar 加蜂蜜色 🗃️ 图标，点进去看极简密集列表——一行 78pt，标题 + 一句话说明 + 来源带颜色 + 相对时间。</p>
+
+  <p><strong>弹药卡内容</strong>：标题 ≤18 字、一句话说明 ≤80 字、来源标注（「Nova」聊前存 / 「Nova + 你」聊后存）。</p>
+
+  <p><strong>点弹药卡</strong>：如果原聊天还活着 → 直接接着聊（不扣配额）；否则走正常 paywall。</p>
+
+  <h2>③ Recap 触发条件改写</h2>
+  <p><strong>v4.1 行为</strong>：聊 ≥5 轮自动产 Recap，1-2 天后回流。<br>
+  <strong>v4.2 行为</strong>：只有「聊了 + 主动存了」（路径 B）的弹药卡，才会 24-48 小时后产 Recap。</p>
+
+  <ul>
+    <li>路径 A（只存没聊）→ <strong>不产</strong></li>
+    <li>没存的聊 → <strong>不产</strong></li>
+  </ul>
+
+  <p>Recap 措辞要求 AI 自然带出关联：「你前两天存的那张『完美是排外的』，后来还接着聊了一会儿——」</p>
+
+  <p><strong>为什么改</strong>：v4.1 的「≥5 轮」门槛太低，产了大量「用户其实并不在意」的 Recap，回流转化稀。改成「让用户用行为投票」后噪音应该明显下降。</p>
+
+  <h2>Build 3 紧急修复（E-5）</h2>
+
+  <div class="hotfix">
+    <div class="hotfix-title">🟢 弹药库 / Recap 进聊天看不到对话历史</div>
+    <div class="hotfix-body">2026-05-08 真机暴露：用户重装 app 后从弹药库 / Recap / 详情页 CTA 进 chat 看到空白对话——之前跟 Nova 聊的 N 轮 history 没人去拉。根因：iOS 三处 RESUME 路径都依赖本地 cache 重装清零；fallthrough 到 POST /chat 时后端只认 active session，5/7 早已被 cleanup_idle 改成 completed。三层修复（PR-10.x）：iOS Path B 直接 navigate（用 ammo.sourceSessionId）+ 后端 prefer_resume_completed 参数 + POST /chat/{id}/messages 自动激活 completed session。</div>
+  </div>
+
+  <h2>v4.2 部署后追加：admin 产品协作工具（build 4，仅后端）</h2>
+
+  <div class="feature-list">
+    <div class="feature">
+      <div class="feature-title">📋 Product Decisions tab 升级</div>
+      <div class="feature-body">在线 review / comment / resolve errata + 决策的入口。左列表 + 右详情布局，含 marked.js + DOMPurify markdown 渲染 + mermaid.js 内联流程图 + comment timeline + resolve 操作。当前 7 条 errata + decision pending 等产品 review（E-1 ~ E-5, D-1, D-2）。</div>
+    </div>
+    <div class="feature">
+      <div class="feature-title">➕ 产品发起 Q-X 新需求</div>
+      <div class="feature-body">右上角「+ 提一个新需求」按钮。表单 7 字段：标题 / 一句话说明 / 🎯 需求目标 / 👤 用户场景 / 🧩 涉及模块 / 📝 详细描述 / PRD 引用。前端拼成 markdown 存到 rationale，详情面板按 ## 章节展开。</div>
+    </div>
+    <div class="feature">
+      <div class="feature-title">📊 System Map dashboard</div>
+      <div class="feature-body">产品向 dashboard，一页完整快照：6 KPI 卡 + 三角色块 + 5 stage 数字生命链路 + 7 张卡类型生态格子 + 9 件 cron 健康度表 + 底部黄底"待你决策"横幅跳 Decisions tab。</div>
+    </div>
+  </div>
+
+  <h2>AI 输出质量基线（首跑）</h2>
+  <table>
+    <thead>
+      <tr><th>Eval</th><th>Mean</th><th>Std</th><th>状态</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>PERCEPTION-04</td><td>4.24</td><td>0.26</td><td>PASS</td></tr>
+      <tr><td>SNIPPET-CAUSAL-02</td><td>4.47</td><td>0.67</td><td>PASS</td></tr>
+      <tr><td>AMMO-CONDENSE</td><td>4.76</td><td>0.26</td><td>PASS</td></tr>
+    </tbody>
+  </table>
+  <p>3/6 完成，全 PASS（PRD threshold 3.5）。剩 3 个（RECAP-07 / PREP-02 / SIGNAL-06）需专门 fixture。</p>
+
+  <h2>当时需要产品 review 的 5 件 errata</h2>
+  <table>
+    <thead>
+      <tr><th>Code</th><th>内容</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>E-1</strong></td><td>评分规则缺 Vega 维度（工程已补段）</td></tr>
+      <tr><td><strong>E-2</strong></td><td>话题卡生成 perceptions 输入未明确（工程注入但 prompt 文档空白）</td></tr>
+      <tr><td><strong>E-3</strong></td><td>PRD §8.5 vs §10 关于"弹药卡进 chat 是否带浓缩文本上下文"措辞冲突</td></tr>
+      <tr><td><strong>E-4</strong></td><td>snippet_generation 80 字约束没要求 word boundary（PR-10.33 修了）</td></tr>
+      <tr><td><strong>E-5</strong></td><td>弹药库/Recap 进聊天对话历史看不到（build 2/3 hotfix）</td></tr>
+    </tbody>
+  </table>
+
+  <p>📋 详见 admin 后台 → Product Decisions tab。</p>
+
+  <h2>已知限制</h2>
+  <ul>
+    <li>Vega 头像还是 Sage 美术 placeholder（等用户出图）</li>
+    <li>详情页 chevron 仍有 iOS 17 chip 包装（用户说后面自修，PR-10.30 尝试 DIY top bar 被 revert）</li>
+    <li>Reddit 403 / 双扣配额 / <code>expires_at</code> 仍 UTC 0:00（v4.1-1 遗留）</li>
+  </ul>
+
+  <div class="footer">
+    工程上 33 个 PR（PR-10.1 → PR-10.33）· 后端 469 测试通过 · iOS +2 测试套件<br>
+    Juttu v1.0.3 build 3 · 2026-05-06 ~ 2026-05-09
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Juttu v1.0.2 发版通知 — v4.1-1 数字生命架构升级</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="container">
+  <nav class="topnav"><a href="./">← 全部发版</a></nav>
+
+  <header class="hero">
+    <div class="eyebrow">Release Notes · 2026-04-27</div>
+    <h1>Juttu v1.0.2 — v4.1-1「数字生命架构升级」</h1>
+    <div class="meta">
+      <span><span class="build-chip">build 2</span></span>
+      <span>TestFlight 已上</span>
+      <span>对应 PRD v4.1-1</span>
+    </div>
+  </header>
+
+  <section class="tldr">
+    <div class="tldr-title">TL;DR · 30 秒读完</div>
+    <p>这版做了<strong>一件结构性大事</strong>：把 v4 时代「角色被 cron 推着生成内容」的流水线工人模式，<strong>重写成「角色每天醒来，自己看一眼世界、自己出去逛逛、消化一下、再回来分享」</strong>的因果链路。</p>
+    <p>同时清掉 v4 上线后用户测试反馈的 6 个体验粗糙点（详情页、Recap、Quote 太长、Prep 不够具体、下拉刷新无效、Snippet 看不到）。</p>
+    <p>📦 工程量：23 个 PR（PR-9.0 → PR-9.22），后端 +384 测试，iOS +36 测试</p>
+  </section>
+
+  <h2>核心改造：数字生命链路</h2>
+  <p>从 v4 的「单线程 cron 推内容」改成 <strong>5 stage 因果链路</strong>：</p>
+
+  <div class="feature-list">
+    <div class="feature">
+      <div class="feature-title">🌅 Stage 1 · Exploration（06:30 UTC）</div>
+      <div class="feature-body">角色「出去逛」——LLM 生成搜索意图（"今天我想看什么"），调 Tavily API 抓回 1-3 篇外部网页，<code>source="exploration"</code> 入库。补 RSS / Reddit 之外的"主动找"信号。</div>
+    </div>
+    <div class="feature">
+      <div class="feature-title">🧠 Stage 2 · Perception（06:50 UTC）</div>
+      <div class="feature-body">角色「消化」——拉今天的 24h scored signals + LLM 分别从 Nova / Leo 视角写「读后感」，存入 <code>perceptions</code> collection（含 <code>what / curiosity / want_to_share / signal_id</code>，防 LLM 幻觉 signal_id）。3 天 GC。</div>
+    </div>
+    <div class="feature">
+      <div class="feature-title">📰 Stage 3 · Trending Generation（07:00 UTC）</div>
+      <div class="feature-body">话题卡生成，<strong>主要消费 perceptions 而非原始 signals</strong>——卡片读起来像"角色刚消化完跟你分享"而不是"机器人在播报新闻"。</div>
+    </div>
+    <div class="feature">
+      <div class="feature-title">📋 Stage 4 · Recap Generation（用户 /exit 触发）</div>
+      <div class="feature-body">用户聊 ≥5 轮后退出 → 后端生成 Recap → 写入 <code>recap_cards</code>（<code>(user_id, topic_id)</code> 唯一索引 + next-day UTC 0:00 过期）。</div>
+    </div>
+    <div class="feature">
+      <div class="feature-title">🌙 Stage 5 · Dream Agent（04:00 UTC）</div>
+      <div class="feature-body">凌晨更新 latest_memory.json + 决定生成 return card（feed 顶部"你前两天聊到的话题"卡）。</div>
+    </div>
+  </div>
+
+  <h2>6 个体验粗糙点修复</h2>
+  <table>
+    <thead><tr><th>问题</th><th>修复</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>详情页之前不存在</strong>，点卡直接进 chat 扣配额</td>
+        <td>新加详情页，opening_content 渲染气泡，CTA 才扣配额（详情页本身免费）</td>
+      </tr>
+      <tr>
+        <td>Recap 没有 detail 视图</td>
+        <td>新建 RecapDetailView，CTA "Continue this conversation" 创建新 session</td>
+      </tr>
+      <tr>
+        <td>Quote 太长（≤150 字符在 feed 上一行装不下）</td>
+        <td>收紧到 ≤100 字符</td>
+      </tr>
+      <tr>
+        <td>Prep 卡片太抽象（"试试问问他"）</td>
+        <td>prompt 要求"具体名字 / 数字 / 可以直接说出口的话术"</td>
+      </tr>
+      <tr>
+        <td>下拉刷新无效</td>
+        <td>Home feed 加 <code>.refreshable</code> + 后端 <code>?refresh=true</code> 限流 query param（默认 3 次/slot）</td>
+      </tr>
+      <tr>
+        <td>Snippet 用户看不到</td>
+        <td>client-side seen ack（<code>/feed/snippet/seen</code> POST），避免后端把"返回"误判为"已看"</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>新数据模型</h2>
+  <table>
+    <thead><tr><th>Collection</th><th>关键字段</th><th>用途</th></tr></thead>
+    <tbody>
+      <tr><td><code>recap_cards</code></td><td>(user_id, topic_id) 唯一 + expires_at</td><td>Recap 持久化</td></tr>
+      <tr><td><code>perceptions</code></td><td>character / what / curiosity / want_to_share / signal_id</td><td>角色"读后感"，3 天 GC</td></tr>
+      <tr><td><code>trending_signals</code> (修改)</td><td>+enriched_content (≤600 chars) / enriched_sources (1-3 URLs)</td><td>Tavily enrich 输出</td></tr>
+      <tr><td><code>snippets</code> (修改)</td><td>+source_signal_id（索引）</td><td>追溯客厅闲聊的源信号</td></tr>
+    </tbody>
+  </table>
+
+  <h2>新 Celery 任务</h2>
+  <table>
+    <thead><tr><th>Task</th><th>Schedule</th><th>用途</th></tr></thead>
+    <tbody>
+      <tr><td><code>run_exploration_query</code></td><td>06:30 UTC</td><td>角色出去逛</td></tr>
+      <tr><td><code>run_perception_digest</code></td><td>06:50 UTC</td><td>消化今天信号</td></tr>
+    </tbody>
+  </table>
+
+  <h2>iOS 端</h2>
+  <ul>
+    <li>新详情页（路由 + 视图）+ Recap 详情页</li>
+    <li>3 个角色头像 imageset（Nova / Leo / Sage——Sage 在 v4.2 换 Vega）</li>
+    <li>navbar gear 图标 + 设置页（语言切换 + 退出登录 + version 显示）</li>
+    <li>+36 个 iOS 测试 case</li>
+  </ul>
+
+  <h2>已知限制（带到 v4.2）</h2>
+  <ul>
+    <li>Sage 太隐形（v4.2 重塑成 Vega 解决）</li>
+    <li>Reddit 403 抓取失败（部分 subreddit 反 bot）</li>
+    <li>双扣配额边缘 case（PR-8.x 修了一波，v4.1-1 仍有少量场景）</li>
+    <li><code>expires_at</code> UTC 0:00 而非 local timezone</li>
+  </ul>
+
+  <div class="footer">
+    工程上 23 个 PR（PR-9.0 → PR-9.22）· 后端 +384 测试 · iOS +36 测试<br>
+    Juttu v1.0.2 build 2 · 2026-04-27
+  </div>
+
+</div>
+</body>
+</html>

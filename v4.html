@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Juttu v1.0.1 发版通知 — v4 Digital Life 维护版</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="container">
+  <nav class="topnav"><a href="./">← 全部发版</a></nav>
+
+  <header class="hero">
+    <div class="eyebrow">Release Notes · 2026-04-23</div>
+    <h1>Juttu v1.0.1 — v4「Digital Life」首个维护版</h1>
+    <div class="meta">
+      <span><span class="build-chip">build 1</span></span>
+      <span>TestFlight 已上</span>
+      <span>对应 PRD v4</span>
+    </div>
+  </header>
+
+  <section class="tldr">
+    <div class="tldr-title">TL;DR · 30 秒读完</div>
+    <p>v4 「Digital Life」上线后第一个维护版本。<strong>稳固 session / 配额 / 回流三大流程</strong>，把观测黑洞（ingest 任务、Dream Agent、Prompt override）全部点亮，修几条"发消息没回应 / 明明没聊就到限额 / 卡片 Leo 说好 opener 进聊天消失"的体验 bug。</p>
+    <p>注：本版按当时的「客户端 / PE / 服务器 / 运行时 / 文档」结构记录。<strong>新格式（Backend / PE / iOS / Other 四模块）从 v1.0.2 起开始</strong>。</p>
+  </section>
+
+  <h2>Session / 配额 / 回流 三流程稳固</h2>
+
+  <div class="feature-list">
+    <div class="feature">
+      <div class="feature-title">🔁 Session resume 按 <code>(source_type, source_id)</code> 匹配</div>
+      <div class="feature-body">之前只 <code>topic_card_id == body.topic_card_id</code>，Snippet 的 <code>topic_card_id=None</code> 永远 resume 不到，<strong>点同一 Snippet 两次扣两次配额</strong>。修复：先 derive source_type/source_id，再查 active session。topic / snippet / prep / return 四种入口 resume 语义现在对称。</div>
+    </div>
+    <div class="feature">
+      <div class="feature-title">📊 Active session map key 扩展</div>
+      <div class="feature-body">从 <code>{topic_card_id → session_id}</code> 改成 <code>{(source_type, source_id) → session_id}</code>。<code>/feed/instant</code> 的 topic / return / snippet 都能拿到 active_session_id hint，避免 paywall 误触。</div>
+    </div>
+    <div class="feature">
+      <div class="feature-title">🎯 Direct 卡 opening 兜底</div>
+      <div class="feature-body">若 <code>conversation_type=direct</code> 且有 <code>leo_quote</code> 但 opening 没 Leo，<strong>自动用 leo_quote 填 opening_content[1]</strong>。修"卡片 Leo 说好 opener 进聊天消失"的体验 bug——81% 的 direct 卡之前只 Nova 在 chat 里出现。</div>
+    </div>
+    <div class="feature">
+      <div class="feature-title">💰 安全 HIGH 事件退款</div>
+      <div class="feature-body">触发 safety_blocked 的 chat，Free 用户 <code>chat_count_today -= 1</code>。"明明没真聊就扣了一次配额"修复。</div>
+    </div>
+    <div class="feature">
+      <div class="feature-title">🔁 Return session 不扣配额</div>
+      <div class="feature-body">Return session（Spill it 触发，PRD §7.5）是 deep chat 的 continuation，<strong>bypass paywall + 不消耗 daily quota</strong>。配合 chat.py 的 is_return_session 分支。</div>
+    </div>
+  </div>
+
+  <h2>观测黑洞点亮</h2>
+
+  <div class="feature-list">
+    <div class="feature">
+      <div class="feature-title">⚙️ Admin System tab（新）</div>
+      <div class="feature-body">4 个新 endpoint 监控运行时状态：<code>/system/live-state</code> / <code>/system/scheduled-tasks</code> / <code>/system/agent-runs</code> / <code>/system/run-task/{name}</code>（白名单手动触发）。Admin 后台可以看到所有 cron 跑没跑、Dream Agent 输出、最新 perception batch。</div>
+    </div>
+    <div class="feature">
+      <div class="feature-title">📝 V4 Prompt CRUD（admin）</div>
+      <div class="feature-body">Admin 后台可以在线 view / edit / delete prompt（<code>/admin/v4/prompts</code> + <code>/{key}</code>），DELETE 恢复 code-level 默认。不动 git 也能验证 prompt 改动效果。</div>
+    </div>
+    <div class="feature">
+      <div class="feature-title">📋 TaskRunLog 接入 3 个 ingest tasks</div>
+      <div class="feature-body">PR-8.22 把 TaskRunLog 模型接进 RSS / Reddit / Hacker News 三个 ingest tasks，admin 能看到每次跑的状态、抓回数量、失败原因。</div>
+    </div>
+  </div>
+
+  <h2>其他体验修复</h2>
+  <ul>
+    <li><strong>Session expired 自动 retry（A 路径）</strong>：iOS 端遇到 session expired 时不再直接报错，silent retry 一次</li>
+    <li><strong>2h Preview reap（B 路径）</strong>：服务器侧 active session 2 小时无活动转 expired</li>
+    <li><strong>Pull-to-refresh on Home feed</strong>：iOS PR-8.19 加 <code>.refreshable</code>（v4.1-1 时进一步完善）</li>
+    <li><strong>Paywall flow diagnostic logs</strong>：iOS PR-8.20 加 [Quota] 前缀的 print，方便排查"明明 pro 还触发 paywall"问题</li>
+    <li><strong>SnippetUI activeSessionId default-nil</strong>：PR-8.24 fix，避免 decode 时报错</li>
+    <li><strong>Snippets active_session_id symmetric</strong>：PR-8.21 给 snippet 也加同样的 active_session_id 字段（之前只 topic_card 有）</li>
+  </ul>
+
+  <h2>已知限制（带到 v4.1-1）</h2>
+  <ul>
+    <li>主屏 feed 内容跨度不够（v4.1-1 加 exploration 解决）</li>
+    <li>详情页不存在，点卡直接进 chat（v4.1-1 新加详情页）</li>
+    <li>Recap 没有 detail 视图（v4.1-1 新加）</li>
+    <li>Quote ≤150 字符在 feed 上一行装不下（v4.1-1 收紧到 100）</li>
+    <li>下拉刷新无效（v4.1-1 修）</li>
+    <li>Snippet 用户看不到（v4.1-1 引入 client-side seen ack）</li>
+  </ul>
+
+  <p style="color: var(--mute); font-size: 14px;">完整 PR 清单：PR-8.15 → PR-8.24（约 10 个 PR）。详情见 docs/CHANGELOG.md 的 [1.0.1] 段，或 admin 后台 Changelog tab。</p>
+
+  <div class="footer">
+    Juttu v1.0.1 build 1 · 2026-04-23<br>
+    第一个 TestFlight 维护版本，把 v4「Digital Life」首发的边缘 case 补稳
+  </div>
+
+</div>
+</body>
+</html>
